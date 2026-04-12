@@ -23,21 +23,13 @@ function isArabic(text) {
   return /[\u0600-\u06FF]/.test(text);
 }
 
-// Detect greeting
+// Greeting detection
 function isGreeting(text) {
   const t = text.toLowerCase().trim();
   return (
     ["hi", "hello", "hey"].includes(t) ||
     ["مرحبا", "اهلا", "أهلا", "سلام"].includes(text)
   );
-}
-
-// Clean response (IMPORTANT FIX)
-function cleanText(text) {
-  return text
-    .replace(/\n+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 // Health check
@@ -50,31 +42,26 @@ app.post("/api/chat", async (req, res) => {
     const message = req.body.message || "";
     const arabic = isArabic(message);
 
-    // Greeting
+    // ✅ GREETING (FIXED)
     if (isGreeting(message)) {
       return res.json({
         reply: arabic
-          ? `👋 أهلاً! أنا مساعد RELIXA.\nأقدر أساعدك في اختيار المنتج المناسب.\n\n🛒 أنصحك بـ:\n👉 ${PRODUCT.url}`
-          : `👋 Hey! I'm your RELIXA assistant.\nI can help you improve posture and comfort.\n\n🛒 I recommend:\n👉 ${PRODUCT.url}`,
+          ? `👋 أهلاً! أنا مساعد RELIXA.\n\n🛒 أنصحك بـ:\n👉 ${PRODUCT.url}`
+          : `👋 Hey! I'm your RELIXA assistant.\n\n🛒 I recommend:\n👉 ${PRODUCT.url}`,
       });
     }
 
+    // ✅ AI (SHORT ONLY — NO LINKS)
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      temperature: 0.6,
-      max_tokens: 120, // ✅ prevents long cut responses
+      temperature: 0.5,
+      max_tokens: 60, // 🔥 VERY IMPORTANT (prevents cutting)
       messages: [
         {
           role: "system",
           content: arabic
-            ? `أنت مساعد متجر. 
-- رد بشكل قصير جداً
-- ركز على الفائدة
-- رشّح المنتج مباشرة`
-            : `You are a Shopify assistant.
-- Keep replies short
-- Focus on benefits
-- Recommend the product clearly`,
+            ? "أجب بجملة قصيرة جداً تشرح فائدة posture corrector بدون أي روابط."
+            : "Answer in one short sentence explaining benefits of a posture corrector. No links.",
         },
         {
           role: "user",
@@ -83,15 +70,15 @@ app.post("/api/chat", async (req, res) => {
       ],
     });
 
-    let reply = completion.choices[0].message.content;
+    let aiReply = completion.choices[0].message.content.trim();
 
-    // ✅ CLEAN TEXT (FIX CUT/GLUE ISSUE)
-    reply = cleanText(reply);
+    // ❗ HARD CLEAN (REMOVE ANY URL FROM AI)
+    aiReply = aiReply.replace(/https?:\/\/\S+/g, "");
 
-    // ✅ FORCE CLEAN CTA SEPARATION
+    // ✅ FINAL CONTROLLED OUTPUT (PERFECT FORMAT)
     const finalReply = arabic
-      ? `${reply}\n\n🛒 اطلب الآن:\n👉 ${PRODUCT.url}`
-      : `${reply}\n\n🛒 Buy now:\n👉 ${PRODUCT.url}`;
+      ? `${aiReply}\n\n🛒 اطلب الآن:\n👉 ${PRODUCT.url}`
+      : `${aiReply}\n\n🛒 Buy now:\n👉 ${PRODUCT.url}`;
 
     res.json({ reply: finalReply });
 
