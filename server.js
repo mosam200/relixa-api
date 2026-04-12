@@ -23,13 +23,26 @@ function isArabic(text) {
   return /[\u0600-\u06FF]/.test(text);
 }
 
-// Greeting detection
+// Detect greeting
 function isGreeting(text) {
   const t = text.toLowerCase().trim();
   return (
     ["hi", "hello", "hey"].includes(t) ||
     ["مرحبا", "اهلا", "أهلا", "سلام"].includes(text)
   );
+}
+
+// REMOVE ANY URL (CRITICAL FIX)
+function removeLinks(text) {
+  return text.replace(/https?:\/\/\S+/g, "").replace(/www\.\S+/g, "");
+}
+
+// FORCE SHORT CLEAN TEXT
+function cleanText(text) {
+  return text
+    .replace(/\n+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 // Health check
@@ -42,7 +55,7 @@ app.post("/api/chat", async (req, res) => {
     const message = req.body.message || "";
     const arabic = isArabic(message);
 
-    // ✅ GREETING (FIXED)
+    // ✅ GREETING
     if (isGreeting(message)) {
       return res.json({
         reply: arabic
@@ -51,17 +64,17 @@ app.post("/api/chat", async (req, res) => {
       });
     }
 
-    // ✅ AI (SHORT ONLY — NO LINKS)
+    // ✅ AI RESPONSE (STRICT CONTROL)
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      temperature: 0.5,
-      max_tokens: 60, // 🔥 VERY IMPORTANT (prevents cutting)
+      temperature: 0.4,
+      max_tokens: 40, // 🔥 VERY SHORT
       messages: [
         {
           role: "system",
           content: arabic
-            ? "أجب بجملة قصيرة جداً تشرح فائدة posture corrector بدون أي روابط."
-            : "Answer in one short sentence explaining benefits of a posture corrector. No links.",
+            ? "أجب بجملة قصيرة جداً عن فوائد posture corrector بدون روابط."
+            : "Reply in ONE short sentence about posture corrector benefits. NO links.",
         },
         {
           role: "user",
@@ -70,12 +83,22 @@ app.post("/api/chat", async (req, res) => {
       ],
     });
 
-    let aiReply = completion.choices[0].message.content.trim();
+    let aiReply = completion.choices[0].message.content;
 
-    // ❗ HARD CLEAN (REMOVE ANY URL FROM AI)
-    aiReply = aiReply.replace(/https?:\/\/\S+/g, "");
+    // ❗ REMOVE ANY AI LINK (HARD FIX)
+    aiReply = removeLinks(aiReply);
 
-    // ✅ FINAL CONTROLLED OUTPUT (PERFECT FORMAT)
+    // ❗ CLEAN TEXT
+    aiReply = cleanText(aiReply);
+
+    // ❗ FALLBACK (IF AI IS BAD)
+    if (!aiReply || aiReply.length < 5) {
+      aiReply = arabic
+        ? "يساعد في تحسين وضعيتك وتقليل الألم."
+        : "Improves posture and reduces back pain.";
+    }
+
+    // ✅ FINAL PERFECT OUTPUT
     const finalReply = arabic
       ? `${aiReply}\n\n🛒 اطلب الآن:\n👉 ${PRODUCT.url}`
       : `${aiReply}\n\n🛒 Buy now:\n👉 ${PRODUCT.url}`;
