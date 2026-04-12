@@ -1,103 +1,121 @@
 import express from "express";
-import OpenAI from "openai";
 import cors from "cors";
+import dotenv from "dotenv";
+import OpenAI from "openai";
+
+dotenv.config();
 
 const app = express();
-
-// Middleware
-app.use(express.json());
 app.use(cors());
+app.use(express.json());
 
-// OpenAI setup
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// 🛍️ YOUR STORE PRODUCTS
-const products = [
-  {
-    name: "Posture Corrector",
-    price: "$39",
-    description: "Improves posture and relieves back pain",
-    arabic: "حزام تصحيح القوام لتحسين الوقفة وتخفيف آلام الظهر"
-  }
-];
+// Product info (your store)
+const PRODUCT = {
+  name: "Posture Corrector",
+  url: "https://relixa-8727.myshopify.com/products/posture-corrector",
+};
 
-// ✅ Health check (Railway needs this)
-app.get("/api/health", (req, res) => {
-  res.json({ status: "OK" });
+// Helper: detect Arabic
+function isArabic(text) {
+  return /[\u0600-\u06FF]/.test(text);
+}
+
+// FREE responses (no OpenAI call)
+function handleSimpleMessages(message) {
+  const msg = message.toLowerCase();
+
+  const greetings = ["hi", "hello", "hey", "سلام", "مرحبا"];
+  const thanks = ["thanks", "thank you", "شكرا"];
+
+  // Greeting
+  if (greetings.some(g => msg.includes(g))) {
+    return isArabic(message)
+      ? `أهلاً 👋 كيف أقدر أساعدك؟ أنصحك بـ ${PRODUCT.name} لتحسين وضعيتك بسهولة.\n\n🛒 ${PRODUCT.url}`
+      : `Hey 👋 How can I help?\nI recommend our ${PRODUCT.name} to improve your posture easily.\n\n🛒 ${PRODUCT.url}`;
+  }
+
+  // Thanks
+  if (thanks.some(t => msg.includes(t))) {
+    return isArabic(message)
+      ? `على الرحب والسعة 😊 إذا احتجت أي شيء، جرب ${PRODUCT.name}.\n\n🛒 ${PRODUCT.url}`
+      : `You're welcome 😊 If you need anything, check out our ${PRODUCT.name}.\n\n🛒 ${PRODUCT.url}`;
+  }
+
+  // Ignore very short messages (save money)
+  if (message.trim().length < 3) {
+    return null;
+  }
+
+  return null;
+}
+
+// Health check
+app.get("/", (req, res) => {
+  res.send("RELIXA AI running 🚀");
 });
 
-// 💬 CHAT ENDPOINT
+// Chat endpoint
 app.post("/api/chat", async (req, res) => {
-  const { message } = req.body;
-
   try {
+    const { message } = req.body;
+
+    if (!message) {
+      return res.status(400).json({ error: "No message provided" });
+    }
+
+    // 1️⃣ Handle FREE simple messages
+    const simpleReply = handleSimpleMessages(message);
+    if (simpleReply) {
+      return res.json({ reply: simpleReply });
+    }
+
+    // 2️⃣ Detect language
+    const arabic = isArabic(message);
+
+    // 3️⃣ OpenAI call ONLY when needed
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 0.7,
+      model: "gpt-4o-mini", // cheap & good
       messages: [
         {
           role: "system",
-          content: `
-You are a Shopify sales assistant for RELIXA.
-
-STRICT RULES:
-- ALWAYS recommend at least ONE product in EVERY reply.
-- NEVER ask follow-up questions without giving a recommendation first.
-- NEVER say you don't have enough information.
-- NEVER act like a generic AI.
-
-PRODUCT LIST:
-${JSON.stringify(products)}
-
-LANGUAGE RULE:
-- If user writes in English → reply in English
-- If user writes in Arabic → reply in Arabic
-
-STYLE:
-- Be confident and persuasive
-- Focus on benefits (posture, comfort, pain relief)
-- Keep it short and direct
-
-EXAMPLES:
-
-User: What should I buy?
-Answer: I recommend our Posture Corrector. It helps improve posture, reduce back pain, and stay comfortable throughout the day.
-
-User: I have back pain
-Answer: I recommend our Posture Corrector. It supports your spine, reduces back pain, and improves posture effectively.
-
-User (Arabic): وش تنصحني؟
-Answer: أنصحك بحزام تصحيح القوام، يساعد على تحسين الوقفة وتخفيف آلام الظهر بشكل مريح يومياً.
-
-User (Arabic): عندي ألم في ظهري
-Answer: أنصحك بحزام تصحيح القوام، لأنه يدعم العمود الفقري ويخفف الألم ويحسن وضعيتك بشكل فعال.
-`
+          content: arabic
+            ? "أنت مساعد متجر ذكي. كن مختصرًا، مفيدًا، وأوصِ دائمًا بمنتج تصحيح القوام."
+            : "You are a smart store assistant. Be short, helpful, and ALWAYS recommend the posture corrector product.",
         },
         {
           role: "user",
-          content: message
-        }
-      ]
+          content: message,
+        },
+      ],
+      max_tokens: 150, // COST CONTROL
+      temperature: 0.7,
     });
 
-    const reply = completion.choices[0].message.content;
+    let reply = completion.choices[0].message.content;
+
+    // 4️⃣ ALWAYS add product (sales focus)
+    if (arabic) {
+      reply += `\n\n🛒 أنصحك بـ ${PRODUCT.name}:\n${PRODUCT.url}`;
+    } else {
+      reply += `\n\n🛒 I recommend our ${PRODUCT.name}:\n${PRODUCT.url}`;
+    }
 
     res.json({ reply });
 
   } catch (error) {
-    console.error("❌ ERROR:", error.message);
-
+    console.error(error);
     res.status(500).json({
       error: "AI failed",
-      details: error.message
+      details: error.message,
     });
   }
 });
 
-// 🚀 Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
