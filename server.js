@@ -13,105 +13,83 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// 🛒 PRODUCT (EDIT IF NEEDED)
+// Product
 const PRODUCT = {
   name: "Posture Corrector",
   url: "https://relixa-8727.myshopify.com/products/posture-corrector",
 };
 
-// 🌍 Detect Arabic
+// Detect Arabic
 function isArabic(text) {
   return /[\u0600-\u06FF]/.test(text);
 }
 
-// 💰 FREE RESPONSES (NO API CALL)
-function handleSimpleMessages(message) {
-  const msg = message.toLowerCase();
-
-  const greetings = ["hi", "hello", "hey", "سلام", "مرحبا"];
-  const thanks = ["thanks", "thank you", "شكرا", "thx"];
-
-  // Greeting
-  if (greetings.some(g => msg.includes(g))) {
-    return isArabic(message)
-      ? `أهلاً 👋 كيف أقدر أساعدك؟\nأنصحك بحزام تصحيح القوام لتحسين وضعيتك بسهولة.\n\n🛒 ${PRODUCT.url}`
-      : `Hey 👋 How can I help?\nI recommend our Posture Corrector to improve your posture easily.\n\n🛒 ${PRODUCT.url}`;
-  }
-
-  // Thanks
-  if (thanks.some(t => msg.includes(t))) {
-    return isArabic(message)
-      ? `على الرحب والسعة 😊\nإذا احتجت أي مساعدة، أنصحك بتجربة حزام تصحيح القوام.\n\n🛒 ${PRODUCT.url}`
-      : `You're welcome 😊\nIf you need anything, check out our Posture Corrector.\n\n🛒 ${PRODUCT.url}`;
-  }
-
-  // VERY SHORT → ignore (save cost)
-  if (message.trim().length < 2) {
-    return isArabic(message)
-      ? `ممكن توضح أكثر؟ 😊`
-      : `Can you tell me a bit more? 😊`;
-  }
-
-  // IMPORTANT: everything else → AI
-  return null;
+// Greeting detection
+function isGreeting(text) {
+  const t = text.toLowerCase().trim();
+  return (
+    ["hi", "hello", "hey", "yo"].includes(t) ||
+    ["مرحبا", "اهلا", "أهلا", "سلام"].includes(text)
+  );
 }
 
-// ❤️ Health check
+// Health check
 app.get("/", (req, res) => {
-  res.send("RELIXA AI running 🚀");
+  res.json({ status: "RELIXA AI running 🚀" });
 });
 
-// 🤖 CHAT ENDPOINT
+// Chat endpoint
 app.post("/api/chat", async (req, res) => {
   try {
-    const { message } = req.body;
-
-    if (!message) {
-      return res.status(400).json({ error: "No message provided" });
-    }
-
-    // 1️⃣ FREE responses
-    const simpleReply = handleSimpleMessages(message);
-    if (simpleReply) {
-      return res.json({ reply: simpleReply });
-    }
-
-    // 2️⃣ Detect language
+    const message = req.body.message || "";
     const arabic = isArabic(message);
 
-    // 3️⃣ OpenAI call (ONLY when needed)
+    // ✅ HANDLE GREETING (FIXED ISSUE)
+    if (isGreeting(message)) {
+      return res.json({
+        reply: arabic
+          ? `👋 أهلاً! أنا مساعد RELIXA.\nأقدر أساعدك تختار أفضل منتج لتحسين وضعيتك.\n\n🛒 أنصحك بـ:\n👉 ${PRODUCT.url}`
+          : `👋 Hey! I'm your RELIXA assistant.\nI can help you improve your posture and comfort.\n\n🛒 I recommend:\n👉 ${PRODUCT.url}`,
+      });
+    }
+
+    // AI response
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
+      temperature: 0.7,
       messages: [
         {
           role: "system",
           content: arabic
-            ? "أنت مساعد متجر احترافي. رد بشكل مختصر، مقنع، وركز على بيع المنتج. دائماً اقترح حزام تصحيح القوام."
-            : "You are a high-converting eCommerce assistant. Be persuasive, short, and always recommend the posture corrector.",
+            ? `أنت مساعد متجر إلكتروني احترافي. 
+- تحدث بالعربية
+- قدم توصيات واضحة
+- ركز على الفائدة (تخفيف الألم، تحسين الوضعية)
+- دائماً رشّح منتج posture corrector
+- كن مختصر ومقنع`
+            : `You are a high-converting Shopify assistant.
+- Be clear and persuasive
+- Focus on benefits (posture, pain relief, comfort)
+- Always recommend the posture corrector
+- Keep it short and actionable`,
         },
         {
           role: "user",
           content: message,
         },
       ],
-      max_tokens: 150,
-      temperature: 0.7,
     });
 
     let reply = completion.choices[0].message.content;
 
-    // 4️⃣ FORCE PRODUCT CTA (SALES)
-    if (arabic) {
-      reply += `\n\n🛒 اطلب الآن:\n${PRODUCT.url}`;
-    } else {
-      reply += `\n\n🛒 Buy now:\n${PRODUCT.url}`;
-    }
+    // Always add product CTA
+    reply += arabic
+      ? `\n\n🛒 اطلب الآن:\n👉 ${PRODUCT.url}`
+      : `\n\n🛒 Buy now:\n👉 ${PRODUCT.url}`;
 
     res.json({ reply });
-
   } catch (error) {
-    console.error("ERROR:", error.message);
-
+    console.error(error);
     res.status(500).json({
       error: "AI failed",
       details: error.message,
@@ -119,7 +97,7 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-// 🚀 START SERVER
+// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
