@@ -1,7 +1,6 @@
 {
   "name": "relixa-ai",
   "version": "1.0.0",
-  "description": "RELIXA Shopify AI Assistant (EN + AR)",
   "type": "module",
   "main": "server.js",
   "scripts": {
@@ -9,6 +8,7 @@
   },
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^16.4.0",
     "express": "^4.18.2",
     "openai": "^4.0.0"
   }
