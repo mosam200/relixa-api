@@ -13,52 +13,55 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Product info (your store)
+// 🛒 PRODUCT (EDIT IF NEEDED)
 const PRODUCT = {
   name: "Posture Corrector",
   url: "https://relixa-8727.myshopify.com/products/posture-corrector",
 };
 
-// Helper: detect Arabic
+// 🌍 Detect Arabic
 function isArabic(text) {
   return /[\u0600-\u06FF]/.test(text);
 }
 
-// FREE responses (no OpenAI call)
+// 💰 FREE RESPONSES (NO API CALL)
 function handleSimpleMessages(message) {
   const msg = message.toLowerCase();
 
   const greetings = ["hi", "hello", "hey", "سلام", "مرحبا"];
-  const thanks = ["thanks", "thank you", "شكرا"];
+  const thanks = ["thanks", "thank you", "شكرا", "thx"];
 
   // Greeting
   if (greetings.some(g => msg.includes(g))) {
     return isArabic(message)
-      ? `أهلاً 👋 كيف أقدر أساعدك؟ أنصحك بـ ${PRODUCT.name} لتحسين وضعيتك بسهولة.\n\n🛒 ${PRODUCT.url}`
-      : `Hey 👋 How can I help?\nI recommend our ${PRODUCT.name} to improve your posture easily.\n\n🛒 ${PRODUCT.url}`;
+      ? `أهلاً 👋 كيف أقدر أساعدك؟\nأنصحك بحزام تصحيح القوام لتحسين وضعيتك بسهولة.\n\n🛒 ${PRODUCT.url}`
+      : `Hey 👋 How can I help?\nI recommend our Posture Corrector to improve your posture easily.\n\n🛒 ${PRODUCT.url}`;
   }
 
   // Thanks
   if (thanks.some(t => msg.includes(t))) {
     return isArabic(message)
-      ? `على الرحب والسعة 😊 إذا احتجت أي شيء، جرب ${PRODUCT.name}.\n\n🛒 ${PRODUCT.url}`
-      : `You're welcome 😊 If you need anything, check out our ${PRODUCT.name}.\n\n🛒 ${PRODUCT.url}`;
+      ? `على الرحب والسعة 😊\nإذا احتجت أي مساعدة، أنصحك بتجربة حزام تصحيح القوام.\n\n🛒 ${PRODUCT.url}`
+      : `You're welcome 😊\nIf you need anything, check out our Posture Corrector.\n\n🛒 ${PRODUCT.url}`;
   }
 
-  // Ignore very short messages (save money)
-  if (message.trim().length < 3) {
-    return null;
+  // VERY SHORT → ignore (save cost)
+  if (message.trim().length < 2) {
+    return isArabic(message)
+      ? `ممكن توضح أكثر؟ 😊`
+      : `Can you tell me a bit more? 😊`;
   }
 
+  // IMPORTANT: everything else → AI
   return null;
 }
 
-// Health check
+// ❤️ Health check
 app.get("/", (req, res) => {
   res.send("RELIXA AI running 🚀");
 });
 
-// Chat endpoint
+// 🤖 CHAT ENDPOINT
 app.post("/api/chat", async (req, res) => {
   try {
     const { message } = req.body;
@@ -67,7 +70,7 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).json({ error: "No message provided" });
     }
 
-    // 1️⃣ Handle FREE simple messages
+    // 1️⃣ FREE responses
     const simpleReply = handleSimpleMessages(message);
     if (simpleReply) {
       return res.json({ reply: simpleReply });
@@ -76,38 +79,39 @@ app.post("/api/chat", async (req, res) => {
     // 2️⃣ Detect language
     const arabic = isArabic(message);
 
-    // 3️⃣ OpenAI call ONLY when needed
+    // 3️⃣ OpenAI call (ONLY when needed)
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // cheap & good
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
           content: arabic
-            ? "أنت مساعد متجر ذكي. كن مختصرًا، مفيدًا، وأوصِ دائمًا بمنتج تصحيح القوام."
-            : "You are a smart store assistant. Be short, helpful, and ALWAYS recommend the posture corrector product.",
+            ? "أنت مساعد متجر احترافي. رد بشكل مختصر، مقنع، وركز على بيع المنتج. دائماً اقترح حزام تصحيح القوام."
+            : "You are a high-converting eCommerce assistant. Be persuasive, short, and always recommend the posture corrector.",
         },
         {
           role: "user",
           content: message,
         },
       ],
-      max_tokens: 150, // COST CONTROL
+      max_tokens: 150,
       temperature: 0.7,
     });
 
     let reply = completion.choices[0].message.content;
 
-    // 4️⃣ ALWAYS add product (sales focus)
+    // 4️⃣ FORCE PRODUCT CTA (SALES)
     if (arabic) {
-      reply += `\n\n🛒 أنصحك بـ ${PRODUCT.name}:\n${PRODUCT.url}`;
+      reply += `\n\n🛒 اطلب الآن:\n${PRODUCT.url}`;
     } else {
-      reply += `\n\n🛒 I recommend our ${PRODUCT.name}:\n${PRODUCT.url}`;
+      reply += `\n\n🛒 Buy now:\n${PRODUCT.url}`;
     }
 
     res.json({ reply });
 
   } catch (error) {
-    console.error(error);
+    console.error("ERROR:", error.message);
+
     res.status(500).json({
       error: "AI failed",
       details: error.message,
@@ -115,6 +119,7 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
+// 🚀 START SERVER
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
