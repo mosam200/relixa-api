@@ -22,7 +22,7 @@ const PRODUCTS = {
   knee: {
     name: "RELIXA FLOW PRO™ – Dynamic Knee Stabilizer System",
     keywords: ["knee", "knees", "running", "ركبة"],
-    url: "https://relixa-8727.myshopify.com/products/relixa-flow-pro™-dynamic-knee-stabilizer-system",
+    url: "https://relixa-8727.myshopify.com/cdn/shop/files/337c693b-981e-458b-bdcb-1a29626d190c.jpg?v=1774092270&width=990",
     image: "PASTE_KNEE_IMAGE_HERE",
     desc_en: "Provides stability and reduces knee pain.",
     desc_ar: "يوفر دعمًا للركبة ويقلل الألم."
