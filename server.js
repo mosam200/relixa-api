@@ -8,38 +8,79 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ PRODUCTS (ADD MORE HERE ANYTIME)
-const PRODUCTS = [
-  {
-    name: "Posture Corrector",
-    keywords: ["posture", "back", "pain", "corrector", "ظهر", "وضعية"],
-    url: "https://relixa-827.myshopify.com/products/posture-corrector",
-    image: "https://cdn.shopify.com/s/files/1/0600/0495/8337/files/Relixa_Logo_white.png?v=1775988711",
-    desc_en: "Improves posture and reduces back pain.",
+// ✅ FULL PRODUCT DATABASE
+const PRODUCTS = {
+  back: {
+    name: "RELIXA FRAME™ – Upper Body Alignment System",
+    keywords: ["back", "posture", "spine", "sitting", "ظهر", "وضعية"],
+    url: "https://relixa-8727.myshopify.com/products/relixa-frame™-upper-body-alignment-system",
+    image: "PASTE_BACK_IMAGE_HERE",
+    desc_en: "Corrects posture and relieves back pain.",
     desc_ar: "يساعد على تحسين وضعية الجسم وتخفيف آلام الظهر."
+  },
+
+  knee: {
+    name: "RELIXA FLOW PRO™ – Dynamic Knee Stabilizer System",
+    keywords: ["knee", "knees", "running", "ركبة"],
+    url: "https://relixa-8727.myshopify.com/products/relixa-flow-pro™-dynamic-knee-stabilizer-system",
+    image: "PASTE_KNEE_IMAGE_HERE",
+    desc_en: "Provides stability and reduces knee pain.",
+    desc_ar: "يوفر دعمًا للركبة ويقلل الألم."
+  },
+
+  ankle: {
+    name: "RELIXA FLOW LITE™ – Precision Ankle Stabilizer",
+    keywords: ["ankle", "twisted", "sprain", "كاحل"],
+    url: "https://relixa-8727.myshopify.com/products/relixa-flow-lite™-precision-ankle-stabilizer",
+    image: "PASTE_ANKLE_IMAGE_HERE",
+    desc_en: "Supports the ankle and prevents injury.",
+    desc_ar: "يدعم الكاحل ويمنع الإصابات."
+  },
+
+  system: {
+    name: "RELIXA SYSTEM™ – Full Performance Support System",
+    keywords: ["full", "all", "body", "everything", "كامل"],
+    url: "https://relixa-8727.myshopify.com/products/relixa-system",
+    image: "PASTE_SYSTEM_IMAGE_HERE",
+    desc_en: "Complete support for back, knee, and ankle.",
+    desc_ar: "دعم كامل للظهر والركبة والكاحل."
   }
-];
+};
 
 // ✅ Detect Arabic
 function isArabic(text) {
   return /[\u0600-\u06FF]/.test(text);
 }
 
-// ✅ Find matching product
-function findProduct(message) {
-  const lower = message.toLowerCase();
+// ✅ SMART DETECTION (FIXED)
+function detectProduct(message) {
+  const text = message.toLowerCase();
 
-  for (let product of PRODUCTS) {
-    if (product.keywords.some(k => lower.includes(k))) {
-      return product;
+  let matches = [];
+
+  for (const key in PRODUCTS) {
+    const product = PRODUCTS[key];
+
+    if (product.keywords.some(k => text.includes(k))) {
+      matches.push(key);
     }
   }
 
-  // default product
-  return PRODUCTS[0];
+  // 🔥 MULTIPLE MATCH → FULL SYSTEM
+  if (matches.length >= 2) {
+    return PRODUCTS.system;
+  }
+
+  // 🔥 SINGLE MATCH
+  if (matches.length === 1) {
+    return PRODUCTS[matches[0]];
+  }
+
+  // ❌ NO MATCH → NULL (no more wrong product!)
+  return null;
 }
 
-app.post("/api/chat", async (req, res) => {
+app.post("/api/chat", (req, res) => {
   try {
     const message = req.body.message || "";
     const arabic = isArabic(message);
@@ -53,9 +94,18 @@ app.post("/api/chat", async (req, res) => {
         : `Hey 👋 How can I help you today?`;
     }
 
-    // ✅ Product recommendation
+    // ✅ Product logic
     else {
-      const product = findProduct(message);
+      const product = detectProduct(message);
+
+      // ❌ No match → ask user
+      if (!product) {
+        return res.json({
+          reply: arabic
+            ? "وين الألم؟ (ظهر، ركبة، كاحل)"
+            : "Where is the pain? (back, knee, ankle)"
+        });
+      }
 
       if (arabic) {
         reply = `
@@ -65,7 +115,7 @@ app.post("/api/chat", async (req, res) => {
   <div style="border:1px solid #ddd; border-radius:12px; padding:12px;">
     <img src="${product.image}" style="width:100%; border-radius:10px;" />
 
-    <h3 style="margin:10px 0;">${product.name}</h3>
+    <h3>${product.name}</h3>
 
     <p>${product.desc_ar}</p>
 
@@ -84,7 +134,7 @@ app.post("/api/chat", async (req, res) => {
   <div style="border:1px solid #ddd; border-radius:12px; padding:12px;">
     <img src="${product.image}" style="width:100%; border-radius:10px;" />
 
-    <h3 style="margin:10px 0;">${product.name}</h3>
+    <h3>${product.name}</h3>
 
     <p>${product.desc_en}</p>
 
