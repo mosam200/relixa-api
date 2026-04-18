@@ -13,7 +13,7 @@ const PRODUCTS = {
   back: {
     name: "RELIXA FRAME™ – Upper Body Alignment System",
     keywords: ["back", "posture", "spine", "sitting", "ظهر", "وضعية"],
-    url: "https://relixa-8727.myshopify.com/products/relixa-frame™-upper-body-alignment-system",
+    url: "https://cdn.shopify.com/s/files/1/0600/0495/8337/files/FRAME_posture_corrector_Sizes.png?v=1775145160",
     image: "PASTE_BACK_IMAGE_HERE",
     desc_en: "Corrects posture and relieves back pain.",
     desc_ar: "يساعد على تحسين وضعية الجسم وتخفيف آلام الظهر."
@@ -31,7 +31,7 @@ const PRODUCTS = {
   ankle: {
     name: "RELIXA FLOW LITE™ – Precision Ankle Stabilizer",
     keywords: ["ankle", "twisted", "sprain", "كاحل"],
-    url: "https://relixa-8727.myshopify.com/products/relixa-flow-lite™-precision-ankle-stabilizer",
+    url: "https://relixa-8727.myshopify.com/cdn/shop/files/ca6bf736-e25c-497d-9dfb-a5410432267e.jpg?v=1774090862&width=990",
     image: "PASTE_ANKLE_IMAGE_HERE",
     desc_en: "Supports the ankle and prevents injury.",
     desc_ar: "يدعم الكاحل ويمنع الإصابات."
@@ -40,7 +40,7 @@ const PRODUCTS = {
   system: {
     name: "RELIXA SYSTEM™ – Full Performance Support System",
     keywords: ["full", "all", "body", "everything", "كامل"],
-    url: "https://relixa-8727.myshopify.com/products/relixa-system",
+    url: "https://relixa-8727.myshopify.com/cdn/shop/files/RelixaSystem.png?v=1774225911&width=990",
     image: "PASTE_SYSTEM_IMAGE_HERE",
     desc_en: "Complete support for back, knee, and ankle.",
     desc_ar: "دعم كامل للظهر والركبة والكاحل."
