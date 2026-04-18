@@ -5,7 +5,7 @@ export default async function handler(req, res) {
 
   const { message } = req.body || {};
 
-  if (!message) {
+  if (!message || typeof message !== "string") {
     return res.status(400).json({ error: "Message is required" });
   }
 
@@ -33,23 +33,45 @@ export default async function handler(req, res) {
     }
   };
 
-  // 🔍 KEYWORD DETECTION
+  // 🔍 KEYWORD MAP (more scalable + avoids logic bugs)
+  const keywordMap = [
+    {
+      type: "knee",
+      keywords: ["knee", "knees", "running", "runner"]
+    },
+    {
+      type: "ankle",
+      keywords: ["ankle", "twist", "twisted", "sprain"]
+    },
+    {
+      type: "back",
+      keywords: ["back", "posture", "spine", "sitting"]
+    }
+  ];
+
   let selected = null;
 
-  if (text.includes("back") || text.includes("posture") || text.includes("sitting")) {
-    selected = products.back;
-  } else if (text.includes("knee") || text.includes("running")) {
-    selected = products.knee;
-  } else if (text.includes("ankle") || text.includes("twisted")) {
-    selected = products.ankle;
+  // 🔎 DETECTION LOOP (clean + extendable)
+  for (const group of keywordMap) {
+    if (group.keywords.some(keyword => text.includes(keyword))) {
+      selected = products[group.type];
+      break;
+    }
   }
 
-  // 🎯 FALLBACK
+  // 🎯 FALLBACK (no wrong product anymore)
   if (!selected) {
     return res.status(200).json({
       reply: `
-        <p>I couldn't find an exact match 🤔</p>
-        <p>Can you tell me where the pain is? (back, knee, ankle)</p>
+        <div>
+          <p>I couldn't find an exact match 🤔</p>
+          <p>Please tell me where the pain is:</p>
+          <ul>
+            <li>Back</li>
+            <li>Knee</li>
+            <li>Ankle</li>
+          </ul>
+        </div>
       `
     });
   }
