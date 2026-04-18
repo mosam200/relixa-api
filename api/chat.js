@@ -11,55 +11,55 @@ export default async function handler(req, res) {
 
   const text = message.toLowerCase();
 
-  // 🧠 PRODUCT DATABASE
+  // 🧠 PRODUCTS
   const products = {
     back: {
-      name: "Posture Corrector",
-      desc: "Improves posture and reduces back pain.",
-      url: "https://relixa-827.myshopify.com/products/posture-corrector",
-      image: "https://cdn.shopify.com/s/files/1/0600/0495/8337/files/Relixa_Logo_white.png"
+      name: "RELIXA FRAME™ – Upper Body Alignment System",
+      desc: "Corrects posture and relieves back pain.",
+      url: "https://relixa-8727.myshopify.com/products/relixa-frame™-upper-body-alignment-system",
+      image: "REPLACE_WITH_REAL_BACK_IMAGE"
     },
     knee: {
-      name: "Knee Support",
-      desc: "Provides stability and reduces knee pain.",
-      url: "#",
-      image: "https://cdn.shopify.com/s/files/1/0600/0495/8337/files/Relixa_Logo_white.png"
+      name: "RELIXA FLOW PRO™ – Dynamic Knee Stabilizer System",
+      desc: "Stabilizes knees and reduces pain.",
+      url: "https://relixa-8727.myshopify.com/products/relixa-flow-pro™-dynamic-knee-stabilizer-system",
+      image: "REPLACE_WITH_REAL_KNEE_IMAGE"
     },
     ankle: {
-      name: "Ankle Support",
-      desc: "Supports the ankle and prevents injury.",
-      url: "#",
-      image: "https://cdn.shopify.com/s/files/1/0600/0495/8337/files/Relixa_Logo_white.png"
+      name: "RELIXA FLOW LITE™ – Precision Ankle Stabilizer",
+      desc: "Supports ankles and prevents injury.",
+      url: "https://relixa-8727.myshopify.com/products/relixa-flow-lite™-precision-ankle-stabilizer",
+      image: "REPLACE_WITH_REAL_ANKLE_IMAGE"
+    },
+    system: {
+      name: "RELIXA SYSTEM™ – Full Performance Support System",
+      desc: "Complete support for back, knee, and ankle.",
+      url: "https://relixa-8727.myshopify.com/products/relixa-system",
+      image: "REPLACE_WITH_REAL_SYSTEM_IMAGE"
     }
   };
 
-  // 🔍 KEYWORD MAP (more scalable + avoids logic bugs)
-  const keywordMap = [
-    {
-      type: "knee",
-      keywords: ["knee", "knees", "running", "runner"]
-    },
-    {
-      type: "ankle",
-      keywords: ["ankle", "twist", "twisted", "sprain"]
-    },
-    {
-      type: "back",
-      keywords: ["back", "posture", "spine", "sitting"]
-    }
-  ];
+  // 🔍 DETECT BODY PARTS
+  const hasBack = ["back", "posture", "spine", "sitting"].some(k => text.includes(k));
+  const hasKnee = ["knee", "running"].some(k => text.includes(k));
+  const hasAnkle = ["ankle", "twisted", "sprain"].some(k => text.includes(k));
 
   let selected = null;
 
-  // 🔎 DETECTION LOOP (clean + extendable)
-  for (const group of keywordMap) {
-    if (group.keywords.some(keyword => text.includes(keyword))) {
-      selected = products[group.type];
-      break;
-    }
+  // 🧠 SMART PRIORITY LOGIC
+  const count = [hasBack, hasKnee, hasAnkle].filter(Boolean).length;
+
+  if (count >= 2 || text.includes("whole body") || text.includes("everything")) {
+    selected = products.system;
+  } else if (hasKnee) {
+    selected = products.knee;
+  } else if (hasAnkle) {
+    selected = products.ankle;
+  } else if (hasBack) {
+    selected = products.back;
   }
 
-  // 🎯 FALLBACK (no wrong product anymore)
+  // 🎯 FALLBACK
   if (!selected) {
     return res.status(200).json({
       reply: `
@@ -70,13 +70,14 @@ export default async function handler(req, res) {
             <li>Back</li>
             <li>Knee</li>
             <li>Ankle</li>
+            <li>Multiple areas</li>
           </ul>
         </div>
       `
     });
   }
 
-  // 🎨 HTML RESPONSE
+  // 🎨 HTML
   const html = `
     <div>
       <p>I recommend this product 👇</p>
