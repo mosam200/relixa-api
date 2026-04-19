@@ -25,8 +25,8 @@ const PRODUCTS = {
   knee: {
     name: "RELIXA FLOW PRO™ – Dynamic Knee Stabilizer System",
     keywords: ["knee", "knees", "running", "ركبة"],
-    url: "https://relixa-8727.myshopify.com/ar/collections/all", // ⚠️ replace with real product page when ready
-    image: "https://cdn.shopify.com/s/files/1/0600/0495/8337/files/337c693b-981e-458b-bdcb-1a29626d190c.jpg",
+    url: "https://relixa-8727.myshopify.com/ar/products/relixa-flow-pro%E2%84%A2-dynamic-knee-stabilizer-system",
+    image: "https://relixa-8727.myshopify.com/cdn/shop/files/8ed33ebc-74c2-48e0-951f-0f78a0e7cf9a.jpg?v=1774092264&width=990",
     desc_en: "Provides stability and reduces knee pain.",
     desc_ar: "يوفر دعمًا للركبة ويقلل الألم."
   },
@@ -34,8 +34,8 @@ const PRODUCTS = {
   ankle: {
     name: "RELIXA FLOW LITE™ – Precision Ankle Stabilizer",
     keywords: ["ankle", "twisted", "sprain", "كاحل"],
-    url: "https://relixa-8727.myshopify.com/ar/collections/all", // ⚠️ replace later
-    image: "https://cdn.shopify.com/s/files/1/0600/0495/8337/files/ca6bf736-e25c-497d-9dfb-a5410432267e.jpg",
+    url: "https://relixa-8727.myshopify.com/ar/products/relixa-flow-lite%E2%84%A2-precision-ankle-stabilizer",
+    image: "https://relixa-8727.myshopify.com/cdn/shop/files/ca6bf736-e25c-497d-9dfb-a5410432267e.jpg?v=1774090862&width=990",
     desc_en: "Supports the ankle and prevents injury.",
     desc_ar: "يدعم الكاحل ويمنع الإصابات."
   },
@@ -43,8 +43,8 @@ const PRODUCTS = {
   system: {
     name: "RELIXA SYSTEM™ – Full Performance Support System",
     keywords: ["full", "all", "body", "everything", "كامل"],
-    url: "https://relixa-8727.myshopify.com/ar",
-    image: "https://cdn.shopify.com/s/files/1/0600/0495/8337/files/RelixaSystem.png",
+    url: "https://relixa-8727.myshopify.com/ar/products/relixa-system",
+    image: "https://relixa-8727.myshopify.com/cdn/shop/files/RelixaSystem.png?v=1774225911&width=990",
     desc_en: "Complete support for back, knee, and ankle.",
     desc_ar: "دعم كامل للظهر والركبة والكاحل."
   }
