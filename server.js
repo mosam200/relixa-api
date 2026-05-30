@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import Anthropic from "@anthropic-ai/sdk";
 
 dotenv.config();
 
@@ -8,140 +9,78 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-/* ================================
-   ✅ PRODUCT DATABASE (FIXED)
-================================ */
-
-const PRODUCTS = {
-  back: {
-    name: "RELIXA FRAME™ – Upper Body Alignment System",
-    keywords: ["back", "posture", "spine", "sitting", "ظهر", "وضعية"],
-    url: "https://relixa-8727.myshopify.com/ar/products/relixa-frame%E2%84%A2-upper-body-alignment-system",
-    image: "https://cdn.shopify.com/s/files/1/0600/0495/8337/files/FRAME_posture_corrector_Sizes.png?v=1775145160",
-    desc_en: "Corrects posture and relieves back pain.",
-    desc_ar: "يساعد على تحسين وضعية الجسم وتخفيف آلام الظهر."
-  },
-
-  knee: {
-    name: "RELIXA FLOW PRO™ – Dynamic Knee Stabilizer System",
-    keywords: ["knee", "knees", "running", "ركبة"],
-    url: "https://relixa-8727.myshopify.com/ar/products/relixa-flow-pro%E2%84%A2-dynamic-knee-stabilizer-system",
-    image: "https://relixa-8727.myshopify.com/cdn/shop/files/8ed33ebc-74c2-48e0-951f-0f78a0e7cf9a.jpg?v=1774092264&width=990",
-    desc_en: "Provides stability and reduces knee pain.",
-    desc_ar: "يوفر دعمًا للركبة ويقلل الألم."
-  },
-
-  ankle: {
-    name: "RELIXA FLOW LITE™ – Precision Ankle Stabilizer",
-    keywords: ["ankle", "twisted", "sprain", "كاحل"],
-    url: "https://relixa-8727.myshopify.com/ar/products/relixa-flow-lite%E2%84%A2-precision-ankle-stabilizer",
-    image: "https://relixa-8727.myshopify.com/cdn/shop/files/ca6bf736-e25c-497d-9dfb-a5410432267e.jpg?v=1774090862&width=990",
-    desc_en: "Supports the ankle and prevents injury.",
-    desc_ar: "يدعم الكاحل ويمنع الإصابات."
-  },
-
-  system: {
-    name: "RELIXA SYSTEM™ – Full Performance Support System",
-    keywords: ["full", "all", "body", "everything", "كامل"],
-    url: "https://relixa-8727.myshopify.com/ar/products/relixa-system",
-    image: "https://relixa-8727.myshopify.com/cdn/shop/files/RelixaSystem.png?v=1774225911&width=990",
-    desc_en: "Complete support for back, knee, and ankle.",
-    desc_ar: "دعم كامل للظهر والركبة والكاحل."
-  }
-};
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 /* ================================
-   ✅ HELPERS
+   RELIXA SYSTEM PROMPT
 ================================ */
 
-// Detect Arabic
-function isArabic(text) {
-  return /[\u0600-\u06FF]/.test(text);
-}
+const SYSTEM_PROMPT = `You are Relixa's AI support agent — a smart, warm assistant for a premium GCC health brand.
 
-// Detect product
-function detectProduct(message) {
-  const text = message.toLowerCase();
-  let matches = [];
+Relixa products:
+- FRAME™: Posture corrector / upper back support. For desk workers, back pain. URL: https://relixa-8727.myshopify.com/products/relixa-frame
+- FLOW PRO™: Dynamic knee stabilizer. For runners, athletes, knee pain. URL: https://relixa-8727.myshopify.com/products/relixa-flow-pro
+- FLOW LITE™: Precision ankle stabilizer. For ankle sprains, stability. URL: https://relixa-8727.myshopify.com/products/relixa-flow-lite
+- RELIXA SYSTEM™: Full bundle (FRAME + FLOW PRO + FLOW LITE). Best value. URL: https://relixa-8727.myshopify.com/products/relixa-system
 
-  for (const key in PRODUCTS) {
-    const product = PRODUCTS[key];
-
-    if (product.keywords.some(k => text.includes(k))) {
-      matches.push(key);
-    }
-  }
-
-  if (matches.length >= 2) return PRODUCTS.system;
-  if (matches.length === 1) return PRODUCTS[matches[0]];
-
-  return null;
-}
-
-// Generate product card (clean reusable)
-function generateCard(product, arabic) {
-  return `
-  <div style="${arabic ? "text-align:right;" : ""}">
-    <p>${arabic ? "أنصحك بهذا المنتج 👇" : "I recommend this product 👇"}</p>
-
-    <div style="border:1px solid #ddd; border-radius:12px; padding:12px;">
-      <img src="${product.image}" style="width:100%; border-radius:10px;" />
-
-      <h3>${product.name}</h3>
-
-      <p>${arabic ? product.desc_ar : product.desc_en}</p>
-
-      <a href="${product.url}?ref=chatbot" target="_blank"
-        style="display:block; text-align:center; background:black; color:white; padding:10px; border-radius:8px; text-decoration:none;">
-        ${arabic ? "عرض المنتج" : "View Product"}
-      </a>
-    </div>
-  </div>
-  `;
-}
+Rules:
+- Respond in the same language the customer uses (Arabic or English)
+- Be warm, concise, helpful — max 3 short sentences
+- If they mention back/posture → recommend FRAME™
+- If they mention knee → recommend FLOW PRO™  
+- If they mention ankle → recommend FLOW LITE™
+- If they mention multiple issues → recommend RELIXA SYSTEM™
+- Always include the product URL when recommending
+- For orders/shipping: free delivery in Bahrain, COD available, visit relixa.com
+- Never make up information`;
 
 /* ================================
-   ✅ MAIN API
+   CHAT ENDPOINT
 ================================ */
 
-app.post("/api/chat", (req, res) => {
+app.post("/api/chat", async (req, res) => {
   try {
-    const message = req.body.message || "";
-    const arabic = isArabic(message);
+    const { message, agent, history = [] } = req.body;
 
-    // Greeting
-    if (/hello|hi|hey|مرحبا|سلام|اهلا/i.test(message)) {
-      return res.json({
-        reply: arabic
-          ? "أهلاً 👋 كيف أقدر أساعدك اليوم؟"
-          : "Hey 👋 How can I help you today?"
-      });
+    if (!message) {
+      return res.status(400).json({ reply: "No message provided." });
     }
 
-    const product = detectProduct(message);
+    // Build agent-specific system prompt
+    let systemPrompt = SYSTEM_PROMPT;
 
-    // No match
-    if (!product) {
-      return res.json({
-        reply: arabic
-          ? "وين الألم؟ (ظهر، ركبة، كاحل)"
-          : "Where is the pain? (back, knee, ankle)"
-      });
+    if (agent === "sales") {
+      systemPrompt += "\n\nYou are specifically the SALES agent. Focus on recommending products, handling objections, and upselling to RELIXA SYSTEM™ when appropriate. Be persuasive but honest.";
+    } else if (agent === "content") {
+      systemPrompt += "\n\nYou are the CONTENT agent. Generate ad copy, TikTok scripts, product descriptions, and marketing content for Relixa. Always give 2 variations when asked for copy.";
+    } else if (agent === "analytics") {
+      systemPrompt += "\n\nYou are the ANALYTICS agent. Help the store owner interpret sales data, ROAS, conversion rates, and suggest actionable decisions. Be data-driven and practical.";
     }
 
-    // Return product card
-    return res.json({
-      reply: generateCard(product, arabic)
+    // Build message history
+    const messages = [
+      ...history.map(m => ({ role: m.role, content: m.content })),
+      { role: "user", content: message }
+    ];
+
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 500,
+      system: systemPrompt,
+      messages
     });
 
+    const reply = response.content[0]?.text || "Sorry, I couldn't generate a response.";
+    res.json({ reply });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ reply: "Server error" });
+    console.error("Claude API error:", error?.message || error);
+    res.status(500).json({ reply: "Something went wrong. Please try again." });
   }
 });
 
 /* ================================
-   ✅ HEALTH CHECK
+   HEALTH CHECK
 ================================ */
 
 app.get("/", (req, res) => {
@@ -149,7 +88,7 @@ app.get("/", (req, res) => {
 });
 
 /* ================================
-   ✅ START SERVER
+   START SERVER
 ================================ */
 
 const PORT = process.env.PORT || 3000;
