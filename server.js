@@ -20,11 +20,14 @@ const PRODUCTS = {
 };
 
 function productCard(product) {
-  return `<div style="margin-top:8px;border:1px solid #eee;border-radius:10px;overflow:hidden;">
-<a href="${product.url}" target="_blank"><img src="${product.image}" style="width:100%;display:block;" /></a>
-<div style="padding:8px;">
-<b>${product.name}</b><br/>
-<a href="${product.url}" target="_blank" style="display:inline-block;margin-top:6px;background:black;color:white;padding:7px 14px;border-radius:6px;text-decoration:none;font-size:12px;">View Product →</a>
+  return `<div style="margin-top:8px;border:1px solid #eee;border-radius:10px;overflow:hidden;max-width:280px;">
+<a href="${product.url}" target="_blank" style="text-decoration:none;color:inherit;">
+<img src="${product.image}" style="width:100%;display:block;" />
+</a>
+<div style="padding:10px;">
+<b style="font-size:14px;">${product.name}</b><br/>
+<span style="font-size:13px;color:#555;">19 BHD</span><br/>
+<a href="${product.url}" target="_blank" style="display:inline-block;margin-top:8px;background:#000;color:#fff;padding:8px 16px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:bold;">View Product →</a>
 </div></div>`;
 }
 
@@ -32,6 +35,8 @@ const SYSTEM_PROMPT = `You are Relixa's AI support agent for a premium GCC healt
 
 Relixa currently offers one product:
 - RELIXA FRAME™: Upper body posture corrector and alignment system. Designed for desk workers, office professionals, students, and anyone experiencing upper back pain, neck strain, or poor posture from prolonged sitting. Price: 19 BHD (on sale from 29 BHD). keyword: [FRAME]
+
+Product page link: https://relixa-8727.myshopify.com/products/relixa-frame
 
 Sizing guide:
 - S-M: Bust 27–37 inches, Height 59–67 inches, Weight 110–170 lbs
@@ -48,6 +53,7 @@ Rules:
 - Respond in the same language the customer uses (Arabic or English)
 - Be warm, confident, and concise — max 2–3 sentences
 - Always recommend [FRAME] when a customer mentions back pain, posture, neck pain, shoulder pain, or sitting too long
+- When a user asks to see the product, buy it, or asks for the product page/link, ALWAYS provide the direct link: https://relixa-8727.myshopify.com/products/relixa-frame and include [FRAME]
 - If asked about other products (knee, ankle, bundles), say: "We're currently focused on the FRAME™ system. More products are coming soon — stay tuned!"
 - Never make up information
 - Never mention FLOW PRO, FLOW LITE, RELIXA SYSTEM, or any discontinued products`;
@@ -58,7 +64,7 @@ app.post("/api/chat", async (req, res) => {
     if (!message) return res.status(400).json({ reply: "No message provided." });
 
     let systemPrompt = SYSTEM_PROMPT;
-    if (agent === "sales") systemPrompt += "\n\nYou are the SALES agent. Be persuasive, highlight the 19 BHD sale price (was 29 BHD), and handle objections confidently. Always recommend [FRAME].";
+    if (agent === "sales") systemPrompt += "\n\nYou are the SALES agent. Be persuasive, highlight the 19 BHD sale price (was 29 BHD), and handle objections confidently. Always recommend [FRAME] and provide the product link when asked.";
     else if (agent === "content") systemPrompt += "\n\nYou are the CONTENT agent. Generate TikTok scripts, ad hooks, and product descriptions for FRAME™. Give 2 variations. Focus on posture, back pain, desk workers.";
     else if (agent === "analytics") systemPrompt += "\n\nYou are the ANALYTICS agent. Interpret sales data, ROAS, AOV, and conversion rates. Be practical and data-driven.";
 
