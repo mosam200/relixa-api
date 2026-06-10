@@ -14,7 +14,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const PRODUCTS = {
   frame: {
     name: "RELIXA FRAME™ – Upper Body Alignment System",
-    url: "https://relixa-8727.myshopify.com/products/relixa-frame",
+    url: "https://relixa-8727.myshopify.com/products/relixa-frame%E2%84%A2-upper-body-alignment-system",
     image: "https://cdn.shopify.com/s/files/1/0600/0495/8337/files/FRAME_posture_corrector_Sizes.png?v=1775145160"
   }
 };
@@ -36,7 +36,7 @@ const SYSTEM_PROMPT = `You are Relixa's AI support agent for a premium GCC healt
 Relixa currently offers one product:
 - RELIXA FRAME™: Upper body posture corrector and alignment system. Designed for desk workers, office professionals, students, and anyone experiencing upper back pain, neck strain, or poor posture from prolonged sitting. Price: 19 BHD (on sale from 29 BHD). keyword: [FRAME]
 
-Product page link: https://relixa-8727.myshopify.com/products/relixa-frame
+Product page link: https://relixa-8727.myshopify.com/products/relixa-frame%E2%84%A2-upper-body-alignment-system
 
 Sizing guide:
 - S-M: Bust 27–37 inches, Height 59–67 inches, Weight 110–170 lbs
@@ -53,7 +53,7 @@ Rules:
 - Respond in the same language the customer uses (Arabic or English)
 - Be warm, confident, and concise — max 2–3 sentences
 - Always recommend [FRAME] when a customer mentions back pain, posture, neck pain, shoulder pain, or sitting too long
-- When a user asks to see the product, buy it, or asks for the product page/link, ALWAYS provide the direct link: https://relixa-8727.myshopify.com/products/relixa-frame and include [FRAME]
+- When a user asks to see the product, buy it, or asks for the product page/link, ALWAYS provide the direct link: https://relixa-8727.myshopify.com/products/relixa-frame%E2%84%A2-upper-body-alignment-system and include [FRAME]
 - If asked about other products (knee, ankle, bundles), say: "We're currently focused on the FRAME™ system. More products are coming soon — stay tuned!"
 - Never make up information
 - Never mention FLOW PRO, FLOW LITE, RELIXA SYSTEM, or any discontinued products`;
